@@ -1,4 +1,4 @@
-package com.vupl.orderservice.Entity;
+package com.vupl.orderservice.entities;
 
 import jakarta.persistence.*;
 

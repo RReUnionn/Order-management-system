@@ -34,4 +34,4 @@ kafka:
 
 outbox:
   scheduler:
-    fixed-delay: 5000   # poll outbox mỗi 5 giây
+    fixed-delay: 5000

@@ -1,4 +1,5 @@
 package com.vupl.inventoryservice.service.impl;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vupl.inventoryservice.dto.request.*;
 import com.vupl.inventoryservice.dto.response.*;
@@ -30,10 +31,14 @@ public class InventoryServiceImpl implements InventoryService {
     private final OutboxEventRepository outboxEventRepository;
     private final ObjectMapper objectMapper;
 
-    @Value("${kafka.topics.inventory-reserved}")       private String inventoryReservedTopic;
-    @Value("${kafka.topics.inventory-reserve-failed}") private String inventoryReserveFailedTopic;
-    @Value("${kafka.topics.inventory-released}")       private String inventoryReleasedTopic;
-    @Value("${kafka.topics.inventory-confirmed}")      private String inventoryConfirmedTopic;
+    @Value("${kafka.topics.inventory-reserved}")
+    private String inventoryReservedTopic;
+    @Value("${kafka.topics.inventory-reserve-failed}")
+    private String inventoryReserveFailedTopic;
+    @Value("${kafka.topics.inventory-released}")
+    private String inventoryReleasedTopic;
+    @Value("${kafka.topics.inventory-confirmed}")
+    private String inventoryConfirmedTopic;
 
     // ── Admin operations ──────────────────────────────────────
 

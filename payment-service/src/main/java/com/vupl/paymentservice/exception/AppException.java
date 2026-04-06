@@ -1,4 +1,4 @@
-package com.vupl.userservice.exception;
+package com.vupl.paymentservice.exception;
 
 import lombok.Getter;
 import org.springframework.http.HttpStatus;
@@ -20,8 +20,8 @@ public class AppException extends RuntimeException {
         return new AppException(m, HttpStatus.BAD_REQUEST);
     }
 
-    public static AppException unauthorized(String m) {
-        return new AppException(m, HttpStatus.UNAUTHORIZED);
+    public static AppException conflict(String m) {
+        return new AppException(m, HttpStatus.CONFLICT);
     }
 
     public static AppException forbidden(String m) {

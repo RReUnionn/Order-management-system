@@ -1,4 +1,4 @@
-package com.vupl.userservice.dto.response;
+package com.vupl.paymentservice.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;

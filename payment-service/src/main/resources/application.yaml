@@ -1,13 +1,11 @@
 server:
-  port: 8083
+  port: 8085
+
 spring:
-  messages:
-    basename: messages
-    encoding: UTF-8
   application:
-    name: inventory-service
+    name: payment-service
   datasource:
-    url: jdbc:mariadb://localhost:3307/inventory_db?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Ho_Chi_Minh
+    url: jdbc:mariadb://localhost:3307/payment_db?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Ho_Chi_Minh
     username: user
     password: 123456
     driver-class-name: org.mariadb.jdbc.Driver
@@ -21,7 +19,7 @@ spring:
   kafka:
     bootstrap-servers: localhost:9092
     consumer:
-      group-id: inventory-service-group
+      group-id: payment-service-group
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
@@ -39,12 +37,13 @@ jwt:
 
 kafka:
   topics:
-    order-created: order.created
+    order-confirmed: order.confirmed
+    payment-completed: payment.completed
     payment-failed: payment.failed
-    inventory-reserved: inventory.reserved
-    inventory-reserve-failed: inventory.reserve.failed
-    inventory-released: inventory.released
-    inventory-confirmed: inventory.confirmed
+
+payment:
+  expiry-minutes: 15          # link thanh toán hết hạn sau 15 phút
+  mock-gateway-enabled: true  # dùng mock gateway khi dev (không cần VNPay thật)
 
 outbox:
   scheduler:

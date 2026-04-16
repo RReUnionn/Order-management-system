@@ -9,14 +9,16 @@ import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.handler.annotation.*;
 import org.springframework.stereotype.Component;
 
-@Component @RequiredArgsConstructor @Slf4j
+@Component
+@RequiredArgsConstructor
+@Slf4j
 public class NotificationEventConsumer {
 
     private final NotificationService notificationService;
 
     // ── Order events ──────────────────────────────────────────
 
-    @KafkaListener(topics = "${kafka.topics.order-created}",  groupId = "${spring.kafka.consumer.group-id}")
+    @KafkaListener(topics = "${kafka.topics.order-created}", groupId = "${spring.kafka.consumer.group-id}")
     public void onOrderCreated(@Payload OrderEventPayload p, @Header(KafkaHeaders.RECEIVED_TOPIC) String topic) {
         log.info("[{}] orderId={}", topic, p.getOrderId());
         safeHandle(() -> notificationService.handleOrderEvent("order.created", p));
@@ -61,7 +63,10 @@ public class NotificationEventConsumer {
     }
 
     private void safeHandle(Runnable task) {
-        try { task.run(); }
-        catch (Exception e) { log.error("Error handling notification event: {}", e.getMessage(), e); }
+        try {
+            task.run();
+        } catch (Exception e) {
+            log.error("Error handling notification event: {}", e.getMessage(), e);
+        }
     }
 }

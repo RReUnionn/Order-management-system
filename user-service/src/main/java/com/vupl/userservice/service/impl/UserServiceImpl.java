@@ -4,10 +4,12 @@ import com.vupl.userservice.dto.request.*;
 import com.vupl.userservice.dto.response.AddressResponse;
 import com.vupl.userservice.dto.response.AuthResponse;
 import com.vupl.userservice.dto.response.UserResponse;
+import com.vupl.userservice.entity.RefreshToken;
 import com.vupl.userservice.entity.Role;
 import com.vupl.userservice.entity.User;
 import com.vupl.userservice.entity.UserAddress;
 import com.vupl.userservice.exception.AppException;
+import com.vupl.userservice.repository.RefreshTokenRepository;
 import com.vupl.userservice.repository.RoleRepository;
 import com.vupl.userservice.repository.UserAddressRepository;
 import com.vupl.userservice.repository.UserRepository;
@@ -22,6 +24,11 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.time.LocalDateTime;
+import java.util.Base64;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -37,6 +44,7 @@ public class UserServiceImpl implements UserService {
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
     private final UserDetailsService userDetailsService;
+    private final RefreshTokenRepository refreshTokenRepository;
 
     @Override
     public AuthResponse register(RegisterRequest request) {
@@ -57,12 +65,12 @@ public class UserServiceImpl implements UserService {
                 .role(role)
                 .build();
 
-        userRepository.save(user);
+        User saved = userRepository.save(user);
 
         UserDetails userDetails = userDetailsService.loadUserByUsername(user.getEmail());
         String accessToken = jwtService.generateAccessToken(userDetails);
         String refreshToken = jwtService.generateRefreshToken(userDetails);
-
+        saveRefreshToken(saved, refreshToken);
         return AuthResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
@@ -87,6 +95,8 @@ public class UserServiceImpl implements UserService {
         String accessToken = jwtService.generateAccessToken(userDetails);
         String refreshToken = jwtService.generateRefreshToken(userDetails);
 
+        saveRefreshToken(user, refreshToken);
+
         return AuthResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
@@ -94,6 +104,16 @@ public class UserServiceImpl implements UserService {
                 .expiresIn(jwtService.getAccessTokenExpiration())
                 .user(UserResponse.from(user))
                 .build();
+    }
+
+    @Override
+    public void logout(String refreshToken) {
+        String tokenHash = hashToken(refreshToken);
+        refreshTokenRepository.findByTokenHash(tokenHash)
+                .ifPresent(token -> {
+                    token.setRevoked(true);
+                    refreshTokenRepository.save(token);
+                });
     }
 
     @Override
@@ -203,5 +223,62 @@ public class UserServiceImpl implements UserService {
     private User findByEmail(String email) {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> AppException.notFound("Người dùng không tồn tại"));
+    }
+
+    private void saveRefreshToken(User user, String rawToken) {
+        // Không lưu token thô, chỉ lưu hash để bảo mật
+        refreshTokenRepository.save(RefreshToken.builder()
+                .user(user)
+                .tokenHash(hashToken(rawToken))
+                .expiresAt(LocalDateTime.now().plusSeconds(
+                        jwtService.getRefreshTokenExpiration() / 1000))
+                .build());
+    }
+
+    private String hashToken(String token) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(token.getBytes(StandardCharsets.UTF_8));
+            return Base64.getEncoder().encodeToString(hash);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException("Cannot hash token", e);
+        }
+    }
+    @Override
+    public AuthResponse refreshToken(String refreshToken) {
+        // 1. Kiểm tra token còn hợp lệ không
+        String email = jwtService.extractUsername(refreshToken);
+        if (email == null) throw AppException.unauthorized("Token không hợp lệ");
+
+        // 2. Tìm trong DB theo hash
+        String tokenHash = hashToken(refreshToken);
+        RefreshToken stored = refreshTokenRepository.findByTokenHash(tokenHash)
+                .orElseThrow(() -> AppException.unauthorized("Refresh token không tồn tại"));
+
+        if (stored.getRevoked())
+            throw AppException.unauthorized("Refresh token đã bị thu hồi");
+
+        if (stored.getExpiresAt().isBefore(LocalDateTime.now()))
+            throw AppException.unauthorized("Refresh token đã hết hạn");
+
+        // 3. Revoke token cũ (rotation: mỗi lần refresh dùng token mới)
+        stored.setRevoked(true);
+        refreshTokenRepository.save(stored);
+
+        // 4. Cấp token mới
+        User user = stored.getUser();
+        UserDetails userDetails = userDetailsService.loadUserByUsername(user.getEmail());
+        String newAccessToken  = jwtService.generateAccessToken(userDetails);
+        String newRefreshToken = jwtService.generateRefreshToken(userDetails);
+
+        saveRefreshToken(user, newRefreshToken);
+
+        return AuthResponse.builder()
+                .accessToken(newAccessToken)
+                .refreshToken(newRefreshToken)
+                .tokenType("Bearer")
+                .expiresIn(jwtService.getAccessTokenExpiration())
+                .user(UserResponse.from(user))
+                .build();
     }
 }

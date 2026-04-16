@@ -22,7 +22,6 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        // WebSocket endpoint không cần JWT (auth qua STOMP headers)
                         .requestMatchers("/ws/**").permitAll()
                         .requestMatchers("/api/notifications/admin/**").hasAuthority("ROLE_ADMIN")
                         .anyRequest().authenticated())

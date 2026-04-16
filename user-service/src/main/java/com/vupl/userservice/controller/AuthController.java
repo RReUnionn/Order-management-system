@@ -29,4 +29,17 @@ public class AuthController {
             @Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(ApiResponse.ok(userService.login(request)));
     }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<ApiResponse<AuthResponse>> refresh(
+            @RequestHeader("Refresh-Token") String refreshToken) {
+        return ResponseEntity.ok(ApiResponse.ok(userService.refreshToken(refreshToken)));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(
+            @RequestHeader("Refresh-Token") String refreshToken) {
+        userService.logout(refreshToken);
+        return ResponseEntity.noContent().build();
+    }
 }

@@ -10,6 +10,7 @@ import java.util.List;
 public interface UserService {
     AuthResponse register(RegisterRequest request);
     AuthResponse login(LoginRequest request);
+    void logout(String refreshToken);
     UserResponse getProfile(String email);
     UserResponse updateProfile(String email, UpdateProfileRequest request);
     void changePassword(String email, ChangePasswordRequest request);
@@ -20,4 +21,5 @@ public interface UserService {
     AddressResponse updateAddress(String email, String addressId, AddressRequest request);
     void deleteAddress(String email, String addressId);
     void setDefaultAddress(String email, String addressId);
+    AuthResponse refreshToken(String refreshToken);
 }

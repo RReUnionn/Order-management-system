@@ -14,10 +14,14 @@ public class AddressRequest {
     @Pattern(regexp = "^(0[3|5|7|8|9])+([0-9]{8})$", message = "Số điện thoại không hợp lệ")
     private String phone;
 
-    @NotBlank private String province;
-    @NotBlank private String district;
-    @NotBlank private String ward;
-    @NotBlank private String street;
+    @NotBlank
+    private String province;
+    @NotBlank
+    private String district;
+    @NotBlank
+    private String ward;
+    @NotBlank
+    private String street;
 
     private UserAddress.AddressType addressType = UserAddress.AddressType.HOME;
     private Boolean isDefault = false;
